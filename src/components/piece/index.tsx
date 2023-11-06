@@ -1,5 +1,10 @@
 import type { Move, Square } from 'chess.js';
-import React, { useCallback, useImperativeHandle } from 'react';
+import React, {
+  useCallback,
+  useImperativeHandle,
+  useMemo,
+  useState,
+} from 'react';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import Animated, {
   runOnJS,
@@ -37,16 +42,29 @@ const Piece = React.memo(
       const refs = usePieceRefs();
       const pieceEnabled = useSharedValue(true);
       const { isPromoting } = useBoardPromotion();
-      const { onSelectPiece, onMove, selectedSquare, turn } =
-        useBoardOperations();
+      const {
+        onSelectPiece,
+        onMove,
+        selectedSquare,
+        turn,
+        isPieceGestureInProgress,
+        setIsPieceGestureInProgress,
+      } = useBoardOperations();
+
+      const [isPieceActive, setIsPieceActive] = useState<boolean>(false);
 
       const {
+        pieceSize,
         durations: { move: moveDuration },
         gestureEnabled: gestureEnabledFromChessboardProps,
+        playersColor,
       } = useChessboardProps();
 
       const gestureEnabled = useDerivedValue(
-        () => turn.value === id.charAt(0) && gestureEnabledFromChessboardProps,
+        () =>
+          turn.value === id.charAt(0) &&
+          turn.value === playersColor &&
+          gestureEnabledFromChessboardProps,
         [id, gestureEnabledFromChessboardProps]
       );
 
@@ -55,8 +73,7 @@ const Piece = React.memo(
       const isGestureActive = useSharedValue(false);
       const offsetX = useSharedValue(0);
       const offsetY = useSharedValue(0);
-      const scale = useSharedValue(1);
-
+      const borderColor = useSharedValue(1);
       const translateX = useSharedValue(startPosition.x * size);
       const translateY = useSharedValue(startPosition.y * size);
 
@@ -156,7 +173,7 @@ const Piece = React.memo(
 
       const globalMoveTo = useCallback(
         (move: Move) => {
-          refs?.current?.[move.from].current.moveTo?.(move.to);
+          refs?.current?.[move.from].current?.moveTo?.(move.to);
         },
         [refs]
       );
@@ -177,13 +194,13 @@ const Piece = React.memo(
           return;
         }
         if (!gestureEnabled.value) return;
-        scale.value = withTiming(1.2);
+        borderColor.value = withTiming(0);
         onStartTap(square);
       }, [
+        borderColor,
         gestureEnabled.value,
         globalMoveTo,
         onStartTap,
-        scale,
         selectedSquare.value,
         square,
         toPosition,
@@ -192,9 +209,11 @@ const Piece = React.memo(
         validateMove,
       ]);
 
-      const gesture = Gesture.Pan()
+      const gestureProgress = Gesture.Pan()
         .enabled(!isPromoting && pieceEnabled.value)
         .onBegin(() => {
+          runOnJS(setIsPieceActive)(true);
+          runOnJS(setIsPieceGestureInProgress)(true);
           offsetX.value = translateX.value;
           offsetY.value = translateY.value;
           runOnJS(handleOnBegin)();
@@ -215,21 +234,50 @@ const Piece = React.memo(
           );
         })
         .onFinalize(() => {
-          scale.value = withTiming(1);
+          runOnJS(setIsPieceActive)(false);
+          runOnJS(setIsPieceGestureInProgress)(false);
+          borderColor.value = withTiming(1);
         });
+
+      const gestureDisabled = Gesture.Pan().enabled(false);
+
+      const gesture = useMemo(() => {
+        if (isPieceGestureInProgress && !isPieceActive) {
+          return gestureDisabled;
+        }
+
+        return gestureProgress;
+      }, [
+        isPieceGestureInProgress,
+        isPieceActive,
+        gestureProgress,
+        gestureDisabled,
+      ]);
 
       const style = useAnimatedStyle(() => {
         return {
+          justifyContent: 'center',
+          alignItems: 'center',
           position: 'absolute',
-          opacity: withTiming(pieceEnabled.value ? 1 : 0),
-          zIndex: isGestureActive.value ? 100 : 10,
+          zIndex: selectedSquare.value ? 100 : 10,
+          borderColor:
+            selectedSquare.value === square
+              ? `rgba(44, 141, 255,${borderColor.value.toFixed(2)})`
+              : 'transparent',
+          borderWidth: 1,
+          backgroundColor:
+            selectedSquare.value === square && !isGestureActive.value
+              ? `rgba(44, 141, 255, ${(borderColor.value / 5).toFixed(2)})`
+              : 'transparent',
+          boxSize: 'border-box',
+          width: pieceSize,
+          height: pieceSize,
           transform: [
             { translateX: translateX.value },
             { translateY: translateY.value },
-            { scale: scale.value },
           ],
         };
-      });
+      }, [selectedSquare.value]);
 
       const underlay = useAnimatedStyle(() => {
         const position = toPosition({
@@ -243,9 +291,7 @@ const Piece = React.memo(
           height: size * 2,
           borderRadius: size,
           zIndex: 0,
-          backgroundColor: isGestureActive.value
-            ? 'rgba(0, 0, 0, 0.1)'
-            : 'transparent',
+          backgroundColor: 'transparent',
           transform: [
             { translateX: translation.x - size / 2 },
             { translateY: translation.y - size / 2 },

@@ -214,12 +214,6 @@ const App = () => {
 
 ---
 
-### `undo: () => void;`
-
-Undoes the last made move on the board. Can be done multiple times in a row as long as resetBoard is not called.
-
----
-
 ### `highlight: (_: { square: Square; color?: string }) => void;`
 
 Highlight a square on the chessboard. The default color is `'rgba(255,255,0, 0.5)'`. 
@@ -239,6 +233,12 @@ Resets the chessboard from a fen position.
 ### `getState: () => ChessboardState;`
 
 Returns the current state of the chessboard (which can also be retrieved using the onMove callback).
+
+---
+
+### `undo: () => void;`
+
+Undoes the last made move on the board. Can be done multiple times in a row as long as resetBoard is not called.
 
 ---
 

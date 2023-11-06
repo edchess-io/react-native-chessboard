@@ -1,5 +1,6 @@
 import React, { useImperativeHandle, useRef } from 'react';
 import { View, StyleSheet } from 'react-native';
+import { GestureHandlerRootView } from 'react-native-gesture-handler';
 
 import Background from './components/chessboard-background';
 import { HighlightedSquares } from './components/highlighted-squares';
@@ -10,10 +11,11 @@ import type { ChessboardRef } from './context/board-refs-context';
 import {
   ChessboardProps,
   ChessboardPropsContextProvider,
+  ChessMoveInfo,
+  DEFAULT_BOARD_SIZE,
 } from './context/props-context';
 import { useChessboardProps } from './context/props-context/hooks';
 import type { ChessboardState } from './helpers/get-chessboard-state';
-import { GestureHandlerRootView } from 'react-native-gesture-handler';
 
 const styles = StyleSheet.create({
   container: {
@@ -25,7 +27,14 @@ const Chessboard: React.FC = React.memo(() => {
   const { boardSize } = useChessboardProps();
 
   return (
-    <View style={[styles.container, { width: boardSize }]}>
+    <View
+      style={[
+        styles.container,
+        {
+          width: boardSize,
+        },
+      ]}
+    >
       <Background />
       <Pieces />
       <HighlightedSquares />
@@ -44,12 +53,12 @@ const ChessboardContainerComponent = React.forwardRef<
     ref,
     () => ({
       move: (params) => chessboardRef.current?.move?.(params),
-      undo: () => chessboardRef.current?.undo(),
       highlight: (params) => chessboardRef.current?.highlight(params),
       resetAllHighlightedSquares: () =>
         chessboardRef.current?.resetAllHighlightedSquares(),
       getState: () => chessboardRef?.current?.getState() as ChessboardState,
       resetBoard: (params) => chessboardRef.current?.resetBoard(params),
+      undo: () => chessboardRef.current?.undo(),
     }),
     []
   );
@@ -67,5 +76,6 @@ const ChessboardContainerComponent = React.forwardRef<
 
 const ChessboardContainer = React.memo(ChessboardContainerComponent);
 
-export type { ChessboardRef };
+export { DEFAULT_BOARD_SIZE };
+export type { ChessboardRef, ChessboardProps, ChessMoveInfo, ChessboardState };
 export default ChessboardContainer;

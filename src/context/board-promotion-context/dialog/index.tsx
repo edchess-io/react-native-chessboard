@@ -20,8 +20,6 @@ const PromotionDialog: React.FC<Required<BoardPromotionContextState>> =
         style={[
           {
             width: boardSize / 3,
-            left: boardSize / 3,
-            top: boardSize / 3,
           },
           styles.container,
         ]}
@@ -46,7 +44,7 @@ const styles = StyleSheet.create({
   container: {
     position: 'absolute',
     aspectRatio: 1,
-    backgroundColor: 'rgba(256,256,256,0.85)',
+    backgroundColor: 'rgb(40,40,40)',
     borderRadius: 5,
     zIndex: 10,
     justifyContent: 'center',

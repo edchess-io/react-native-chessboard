@@ -4,6 +4,7 @@ import React, {
   useCallback,
   useImperativeHandle,
   useMemo,
+  useState,
 } from 'react';
 import type Animated from 'react-native-reanimated';
 import { useSharedValue } from 'react-native-reanimated';
@@ -12,7 +13,10 @@ import { getChessboardState } from '../../helpers/get-chessboard-state';
 import { useReversePiecePosition } from '../../notation';
 import { useSetBoard } from '../board-context/hooks';
 import { useBoardPromotion } from '../board-promotion-context/hooks';
-import type { ChessboardRef } from '../board-refs-context';
+import type {
+  ChessboardContextRef,
+  ChessboardRef,
+} from '../board-refs-context';
 import { usePieceRefs } from '../board-refs-context/hooks';
 import { useChessEngine } from '../chess-engine-context/hooks';
 import { useChessboardProps } from '../props-context/hooks';
@@ -25,6 +29,13 @@ type BoardOperationsContextType = {
   isPromoting: (from: Square, to: Square) => boolean;
   selectedSquare: Animated.SharedValue<Square | null>;
   turn: Animated.SharedValue<'w' | 'b'>;
+  moveProgrammatically: (
+    from: Square,
+    to: Square,
+    promotionPiece?: PieceType
+  ) => void;
+  isPieceGestureInProgress: boolean;
+  setIsPieceGestureInProgress: (value: boolean) => void;
 };
 
 const BoardOperationsContext = createContext<BoardOperationsContextType>(
@@ -37,20 +48,27 @@ export type BoardOperationsRef = {
 
 const BoardOperationsContextProviderComponent = React.forwardRef<
   BoardOperationsRef,
-  { controller?: ChessboardRef; children?: React.ReactNode }
->(({ children, controller }, ref) => {
+  {
+    controller?: ChessboardRef;
+    contextController?: ChessboardContextRef;
+    children?: React.ReactNode;
+  }
+>(({ children, controller, contextController }, ref) => {
   const chess = useChessEngine();
   const setBoard = useSetBoard();
   const {
     pieceSize,
     onMove: onChessboardMoveCallback,
-    colors: { checkmateHighlight },
+    playersColor,
   } = useChessboardProps();
-  const { toTranslation } = useReversePiecePosition();
+  const { toTranslation, calculatePosition, isWhitePiecePosition } =
+    useReversePiecePosition();
   const selectableSquares = useSharedValue<Square[]>([]);
   const selectedSquare = useSharedValue<Square | null>(null);
   const { showPromotionDialog } = useBoardPromotion();
   const pieceRefs = usePieceRefs();
+  const [isPieceGestureInProgress, setIsPieceGestureInProgress] =
+    useState<boolean>(false);
 
   const turn = useSharedValue(chess.turn());
 
@@ -73,7 +91,13 @@ const BoardOperationsContextProviderComponent = React.forwardRef<
       const val = toTranslation(from);
       const x = Math.floor(val.x / pieceSize);
       const y = Math.floor(val.y / pieceSize);
-      const piece = chess.board()[y][x];
+
+      const { x: calculatedX, y: calculatedY } = calculatePosition({
+        x,
+        y,
+      });
+
+      const piece = chess.board()[calculatedY][calculatedX];
 
       return (
         piece?.type === chess.PAWN &&
@@ -81,29 +105,7 @@ const BoardOperationsContextProviderComponent = React.forwardRef<
           (to.includes('1') && piece.color === chess.BLACK))
       );
     },
-    [chess, pieceSize, toTranslation]
-  );
-
-  const findKing = useCallback(
-    (type: 'wk' | 'bk') => {
-      const board = chess.board();
-      for (let x = 0; x < board.length; x++) {
-        const row = board[x];
-        for (let y = 0; y < row.length; y++) {
-          const col = String.fromCharCode(97 + Math.round(x));
-
-          // eslint-disable-next-line no-shadow
-          const row = `${8 - Math.round(y)}`;
-          const square = `${col}${row}` as Square;
-
-          const piece = chess.get(square);
-          if (piece?.color === type.charAt(0) && piece.type === type.charAt(1))
-            return square;
-        }
-      }
-      return null;
-    },
-    [chess]
+    [chess, pieceSize, toTranslation, calculatePosition]
   );
 
   const moveProgrammatically = useCallback(
@@ -118,13 +120,8 @@ const BoardOperationsContextProviderComponent = React.forwardRef<
 
       if (move == null) return;
 
-      const isCheckmate = chess.in_checkmate();
-
-      if (isCheckmate) {
-        const square = findKing(chess.turn() === 'b' ? 'bk' : 'wk');
-        if (!square) return;
-        controller?.highlight({ square, color: checkmateHighlight });
-      }
+      contextController?.checkIsCheckState();
+      contextController?.checkIsCheckMateState();
 
       onChessboardMoveCallback?.({
         move,
@@ -136,15 +133,7 @@ const BoardOperationsContextProviderComponent = React.forwardRef<
 
       setBoard(chess.board());
     },
-    [
-      checkmateHighlight,
-      chess,
-      controller,
-      findKing,
-      onChessboardMoveCallback,
-      setBoard,
-      turn,
-    ]
+    [chess, contextController, onChessboardMoveCallback, setBoard, turn]
   );
 
   const onMove = useCallback(
@@ -162,14 +151,18 @@ const BoardOperationsContextProviderComponent = React.forwardRef<
         return;
       }
 
-      pieceRefs?.current?.[to]?.current?.enable(false);
-      showPromotionDialog({
-        type: chess.turn(),
-        onSelect: (piece) => {
-          moveProgrammatically(from, to, piece);
-          pieceRefs?.current?.[to]?.current?.enable(true);
-        },
-      });
+      const chessTurn = chess.turn();
+
+      if (chessTurn === playersColor) {
+        pieceRefs?.current?.[to]?.current?.enable(false);
+        showPromotionDialog({
+          type: chessTurn,
+          onSelect: (piece) => {
+            moveProgrammatically(from, to, piece);
+            pieceRefs?.current?.[to]?.current?.enable(true);
+          },
+        });
+      }
     },
     [
       chess,
@@ -180,6 +173,7 @@ const BoardOperationsContextProviderComponent = React.forwardRef<
       selectableSquares,
       selectedSquare,
       showPromotionDialog,
+      playersColor,
     ]
   );
 
@@ -193,29 +187,33 @@ const BoardOperationsContextProviderComponent = React.forwardRef<
 
       // eslint-disable-next-line no-shadow
       selectableSquares.value = validSquares.map((square) => {
-        // handle castling
-        if (square.toString() == 'O-O') {
-          if (chess.turn() === 'w') {
-            return 'g1';
-          } else {
-            return 'g8';
-          }
-        } else if (square.toString() == 'O-O-O') {
-          if (chess.turn() === 'w') {
-            return 'c1';
-          } else {
-            return 'c8';
-          }
-        }
         const splittedSquare = square.split('x');
         if (splittedSquare.length === 0) {
           return square;
         }
 
+        const splittedSquareValue = splittedSquare[splittedSquare.length - 1];
+
+        if (splittedSquareValue === 'O-O') {
+          if (isWhitePiecePosition) {
+            return 'Kg1' as Square;
+          }
+
+          return 'Kg8' as Square;
+        }
+
+        if (splittedSquareValue === 'O-O-O') {
+          if (isWhitePiecePosition) {
+            return 'Kc1' as Square;
+          }
+
+          return 'Kc8' as Square;
+        }
+
         return splittedSquare[splittedSquare.length - 1] as Square;
       });
     },
-    [chess, selectableSquares, selectedSquare]
+    [chess, selectableSquares, selectedSquare, isWhitePiecePosition]
   );
 
   const moveTo = useCallback(
@@ -238,6 +236,9 @@ const BoardOperationsContextProviderComponent = React.forwardRef<
       selectedSquare,
       isPromoting,
       turn,
+      moveProgrammatically,
+      isPieceGestureInProgress,
+      setIsPieceGestureInProgress,
     };
   }, [
     isPromoting,
@@ -247,6 +248,9 @@ const BoardOperationsContextProviderComponent = React.forwardRef<
     selectableSquares,
     selectedSquare,
     turn,
+    moveProgrammatically,
+    isPieceGestureInProgress,
+    setIsPieceGestureInProgress,
   ]);
 
   return (

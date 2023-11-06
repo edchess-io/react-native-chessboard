@@ -11,11 +11,13 @@ type ChessMoveInfo = {
 };
 
 type ChessboardColorsType = {
-  white: string;
-  black: string;
+  white?: string;
+  black?: string;
   lastMoveHighlight?: string;
   checkmateHighlight?: string;
   promotionPieceButton?: string;
+  suggested?: string;
+  text?: string;
 };
 
 type ChessboardDurationsType = {
@@ -62,6 +64,10 @@ type ChessboardProps = {
    * Useful if you want to customise the default durations used in the chessboard (in milliseconds).
    */
   durations?: ChessboardDurationsType;
+  /**
+   * Indicates which color is being played by the user. Selected color is rendered in the bottom of the board.
+   */
+  playersColor?: Move['color'];
 };
 
 type ChessboardContextType = ChessboardProps &
@@ -81,11 +87,13 @@ const DEFAULT_BOARD_SIZE = Math.floor(SCREEN_WIDTH / 8) * 8;
 const defaultChessboardProps: ChessboardContextType = {
   gestureEnabled: true,
   colors: {
-    black: '#62B1A8',
-    white: '#D9FDF8',
-    lastMoveHighlight: 'rgba(255,255,0, 0.5)',
-    checkmateHighlight: '#E84855',
-    promotionPieceButton: '#FF9B71',
+    black: 'rgb(39, 40, 40)',
+    white: 'rgb(81, 81, 81)',
+    lastMoveHighlight: 'rgba(44, 141, 255, 0.1)',
+    checkmateHighlight: '#EE3232',
+    promotionPieceButton: 'transparent',
+    suggested: 'transparent',
+    text: '#C1C4C7',
   },
   durations: {
     move: 150,
@@ -94,6 +102,7 @@ const defaultChessboardProps: ChessboardContextType = {
   withNumbers: true,
   boardSize: DEFAULT_BOARD_SIZE,
   pieceSize: DEFAULT_BOARD_SIZE / 8,
+  playersColor: 'w',
 };
 
 const ChessboardPropsContext = React.createContext<ChessboardContextType>(
@@ -120,6 +129,10 @@ const ChessboardPropsContextProvider: React.FC<ChessboardProps> = React.memo(
   }
 );
 
-export { ChessboardPropsContextProvider, ChessboardPropsContext };
+export {
+  ChessboardPropsContextProvider,
+  ChessboardPropsContext,
+  DEFAULT_BOARD_SIZE,
+};
 // eslint-disable-next-line no-undef
-export type { ChessboardProps };
+export type { ChessboardProps, ChessMoveInfo };

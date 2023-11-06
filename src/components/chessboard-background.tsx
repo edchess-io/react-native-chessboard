@@ -2,6 +2,7 @@
 import React from 'react';
 import { View, StyleSheet, Text } from 'react-native';
 import { useChessboardProps } from '../context/props-context/hooks';
+import { useReversePiecePosition } from '../notation';
 
 const styles = StyleSheet.create({
   container: {
@@ -30,27 +31,32 @@ interface SquareProps extends RowProps {
 const Square = React.memo(
   ({ white, row, col, letters, numbers }: SquareProps) => {
     const { colors } = useChessboardProps();
+    const { calculateRow, calculateCol } = useReversePiecePosition();
+
     const backgroundColor = white ? colors.black : colors.white;
-    const color = white ? colors.white : colors.black;
-    const textStyle = { fontWeight: '500' as const, fontSize: 10, color };
+    const textStyle = {
+      fontWeight: '400' as const,
+      fontSize: 8,
+      color: colors.text,
+    };
     const newLocal = col === 0;
     return (
       <View
         style={{
           flex: 1,
           backgroundColor,
-          padding: 4,
+          padding: 2,
           justifyContent: 'space-between',
         }}
       >
         {numbers && (
           <Text style={[textStyle, { opacity: newLocal ? 1 : 0 }]}>
-            {'' + (8 - row)}
+            {'' + calculateRow(row)}
           </Text>
         )}
         {row === 7 && letters && (
           <Text style={[textStyle, { alignSelf: 'flex-end' }]}>
-            {String.fromCharCode(97 + col)}
+            {String.fromCharCode(calculateCol(col)).toUpperCase()}
           </Text>
         )}
       </View>
