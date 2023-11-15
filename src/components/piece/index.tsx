@@ -260,14 +260,10 @@ const Piece = React.memo(
           alignItems: 'center',
           position: 'absolute',
           zIndex: selectedSquare.value ? 100 : 10,
-          borderColor:
-            selectedSquare.value === square
-              ? `rgba(44, 141, 255,${borderColor.value.toFixed(2)})`
-              : 'transparent',
-          borderWidth: 1,
+          borderWidth: 0,
           backgroundColor:
             selectedSquare.value === square && !isGestureActive.value
-              ? `rgba(44, 141, 255, ${(borderColor.value / 5).toFixed(2)})`
+              ? 'rgba(151, 189, 227, 0.50)' //`rgba(44, 141, 255, ${(borderColor.value / 5).toFixed(2)})`
               : 'transparent',
           boxSize: 'border-box',
           width: pieceSize,
