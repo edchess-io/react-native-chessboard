@@ -48,8 +48,6 @@ const HighlightedSquareComponent = React.forwardRef<
     return {
       opacity: withTiming(isHighlighted.value ? 1 : 0),
       backgroundColor: backgroundColor.value,
-      // borderWidth: 0.5,
-      // borderColor: borderColor.value,
     };
   }, []);
 
