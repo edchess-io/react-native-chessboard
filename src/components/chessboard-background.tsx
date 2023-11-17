@@ -56,7 +56,7 @@ const Square = React.memo(
         )}
         {row === 7 && letters && (
           <Text style={[textStyle, { alignSelf: 'flex-end' }]}>
-            {String.fromCharCode(calculateCol(col)).toUpperCase()}
+            {String.fromCharCode(calculateCol(col))}
           </Text>
         )}
       </View>
