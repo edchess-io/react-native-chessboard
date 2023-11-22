@@ -1,4 +1,4 @@
-import React, { useImperativeHandle, useRef } from 'react';
+import React, { useImperativeHandle, useMemo, useRef } from 'react';
 import { View, StyleSheet } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 
@@ -16,6 +16,7 @@ import {
 } from './context/props-context';
 import { useChessboardProps } from './context/props-context/hooks';
 import type { ChessboardState } from './helpers/get-chessboard-state';
+import { useReversePiecePosition } from './notation';
 
 const styles = StyleSheet.create({
   container: {
@@ -25,6 +26,15 @@ const styles = StyleSheet.create({
 
 const Chessboard: React.FC = React.memo(() => {
   const { boardSize } = useChessboardProps();
+  const { isBlackPiecePosition } = useReversePiecePosition();
+
+  const transform = useMemo(() => {
+    if (isBlackPiecePosition) {
+      return { rotate: '180deg' };
+    }
+
+    return { rotate: '0deg' };
+  }, [isBlackPiecePosition]);
 
   return (
     <View
@@ -32,6 +42,7 @@ const Chessboard: React.FC = React.memo(() => {
         styles.container,
         {
           width: boardSize,
+          transform: [transform],
         },
       ]}
     >
