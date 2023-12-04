@@ -11,29 +11,24 @@ const Pieces = React.memo(() => {
   const board = useBoard();
   const refs = usePieceRefs();
   const { pieceSize } = useChessboardProps();
-  const { toPosition, calculatePosition } = useReversePiecePosition();
+  const { toPosition } = useReversePiecePosition();
 
   return (
     <>
       {board.map((row, y) =>
         row.map((piece, x) => {
           if (piece !== null) {
-            const { x: calculatedX, y: calculatedY } = calculatePosition({
-              x,
-              y,
-            });
-
             const square = toPosition({
-              x: calculatedX * pieceSize,
-              y: calculatedY * pieceSize,
+              x: x * pieceSize,
+              y: y * pieceSize,
             });
 
             return (
               <Piece
                 ref={refs?.current?.[square]}
-                key={`${calculatedX}-${calculatedY}`}
+                key={`${x}-${y}`}
                 id={`${piece.color}${piece.type}` as const}
-                startPosition={{ x: calculatedX, y: calculatedY }}
+                startPosition={{ x, y }}
                 square={square}
                 size={pieceSize}
               />

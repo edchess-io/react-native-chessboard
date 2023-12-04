@@ -61,8 +61,7 @@ const BoardOperationsContextProviderComponent = React.forwardRef<
     onMove: onChessboardMoveCallback,
     playersColor,
   } = useChessboardProps();
-  const { toTranslation, calculatePosition, isWhitePiecePosition } =
-    useReversePiecePosition();
+  const { toTranslation, isBlackPiecePosition } = useReversePiecePosition();
   const selectableSquares = useSharedValue<Square[]>([]);
   const selectedSquare = useSharedValue<Square | null>(null);
   const { showPromotionDialog } = useBoardPromotion();
@@ -92,12 +91,7 @@ const BoardOperationsContextProviderComponent = React.forwardRef<
       const x = Math.floor(val.x / pieceSize);
       const y = Math.floor(val.y / pieceSize);
 
-      const { x: calculatedX, y: calculatedY } = calculatePosition({
-        x,
-        y,
-      });
-
-      const piece = chess.board()[calculatedY][calculatedX];
+      const piece = chess.board()[y][x];
 
       return (
         piece?.type === chess.PAWN &&
@@ -105,7 +99,7 @@ const BoardOperationsContextProviderComponent = React.forwardRef<
           (to.includes('1') && piece.color === chess.BLACK))
       );
     },
-    [chess, pieceSize, toTranslation, calculatePosition]
+    [chess, pieceSize, toTranslation]
   );
 
   const moveProgrammatically = useCallback(
@@ -195,25 +189,25 @@ const BoardOperationsContextProviderComponent = React.forwardRef<
         const splittedSquareValue = splittedSquare[splittedSquare.length - 1];
 
         if (splittedSquareValue === 'O-O') {
-          if (isWhitePiecePosition) {
-            return 'Kg1' as Square;
+          if (isBlackPiecePosition) {
+            return 'Kg8' as Square;
           }
 
-          return 'Kg8' as Square;
+          return 'Kg1' as Square;
         }
 
         if (splittedSquareValue === 'O-O-O') {
-          if (isWhitePiecePosition) {
-            return 'Kc1' as Square;
+          if (isBlackPiecePosition) {
+            return 'Kc8' as Square;
           }
 
-          return 'Kc8' as Square;
+          return 'Kc1' as Square;
         }
 
         return splittedSquare[splittedSquare.length - 1] as Square;
       });
     },
-    [chess, selectableSquares, selectedSquare, isWhitePiecePosition]
+    [chess, selectableSquares, selectedSquare, isBlackPiecePosition]
   );
 
   const moveTo = useCallback(

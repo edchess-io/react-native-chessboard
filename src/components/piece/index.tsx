@@ -68,7 +68,8 @@ const Piece = React.memo(
         [id, gestureEnabledFromChessboardProps]
       );
 
-      const { toPosition, toTranslation } = useReversePiecePosition();
+      const { toPosition, toTranslation, isBlackPiecePosition } =
+        useReversePiecePosition();
 
       const isGestureActive = useSharedValue(false);
       const offsetX = useSharedValue(0);
@@ -224,6 +225,14 @@ const Piece = React.memo(
         })
         .onUpdate(({ translationX, translationY }) => {
           if (!gestureEnabled.value) return;
+
+          if (isBlackPiecePosition) {
+            translateX.value = offsetX.value - translationX;
+            translateY.value = offsetY.value - translationY;
+
+            return;
+          }
+
           translateX.value = offsetX.value + translationX;
           translateY.value = offsetY.value + translationY;
         })
@@ -255,6 +264,28 @@ const Piece = React.memo(
       ]);
 
       const style = useAnimatedStyle(() => {
+        if (isBlackPiecePosition) {
+          return {
+            justifyContent: 'center',
+            alignItems: 'center',
+            position: 'absolute',
+            zIndex: selectedSquare.value ? 100 : 10,
+            borderWidth: 0,
+            backgroundColor:
+              selectedSquare.value === square && !isGestureActive.value
+                ? 'rgba(151, 189, 227, 0.50)' //`rgba(44, 141, 255, ${(borderColor.value / 5).toFixed(2)})`
+                : 'transparent',
+            boxSize: 'border-box',
+            width: pieceSize,
+            height: pieceSize,
+            transform: [
+              { translateX: translateX.value },
+              { translateY: translateY.value },
+              { rotate: '180deg' },
+            ],
+          };
+        }
+
         return {
           justifyContent: 'center',
           alignItems: 'center',
@@ -273,7 +304,7 @@ const Piece = React.memo(
             { translateY: translateY.value },
           ],
         };
-      }, [selectedSquare.value]);
+      }, [selectedSquare.value, isBlackPiecePosition]);
 
       const underlay = useAnimatedStyle(() => {
         const position = toPosition({

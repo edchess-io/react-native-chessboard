@@ -1,6 +1,13 @@
 /* eslint-disable react-native/no-inline-styles */
-import React from 'react';
-import { View, StyleSheet, Text } from 'react-native';
+import React, { useMemo } from 'react';
+import {
+  View,
+  StyleSheet,
+  Text,
+  StyleProp,
+  ViewStyle,
+  TextStyle,
+} from 'react-native';
 import { useChessboardProps } from '../context/props-context/hooks';
 import { useReversePiecePosition } from '../notation';
 
@@ -31,32 +38,58 @@ interface SquareProps extends RowProps {
 const Square = React.memo(
   ({ white, row, col, letters, numbers }: SquareProps) => {
     const { colors } = useChessboardProps();
-    const { calculateRow, calculateCol } = useReversePiecePosition();
-
+    const { isBlackPiecePosition } = useReversePiecePosition();
     const backgroundColor = white ? colors.black : colors.white;
-    const textStyle = {
+    const textStyle: StyleProp<TextStyle> = {
       fontWeight: '400' as const,
       fontSize: 8,
       color: colors.text,
     };
-    const newLocal = col === 0;
+
+    if (isBlackPiecePosition) {
+      //@ts-ignore
+      textStyle.transform = 'rotate(180deg)';
+    }
+
+    const newCol = isBlackPiecePosition ? col === 7 : col === 0;
+    const newRow = isBlackPiecePosition ? row === 0 : row === 7;
+
+    const wrapperStyles: StyleProp<ViewStyle> = useMemo(() => {
+      const commonStyles: StyleProp<ViewStyle> = {
+        flex: 1,
+        backgroundColor,
+        padding: 2,
+        justifyContent: 'space-between',
+      };
+
+      if (isBlackPiecePosition) {
+        return {
+          ...commonStyles,
+          flexDirection: 'column-reverse',
+        };
+      }
+
+      return commonStyles;
+    }, [isBlackPiecePosition, backgroundColor]);
+
+    const lettersStyles: StyleProp<TextStyle> = useMemo(() => {
+      if (isBlackPiecePosition) {
+        return { alignSelf: 'flex-start' };
+      }
+
+      return { alignSelf: 'flex-end' };
+    }, [isBlackPiecePosition]);
+
     return (
-      <View
-        style={{
-          flex: 1,
-          backgroundColor,
-          padding: 2,
-          justifyContent: 'space-between',
-        }}
-      >
+      <View style={wrapperStyles}>
         {numbers && (
-          <Text style={[textStyle, { opacity: newLocal ? 1 : 0 }]}>
-            {'' + calculateRow(row)}
+          <Text style={[textStyle, { opacity: newCol ? 1 : 0 }]}>
+            {'' + (8 - row)}
           </Text>
         )}
-        {row === 7 && letters && (
-          <Text style={[textStyle, { alignSelf: 'flex-end' }]}>
-            {String.fromCharCode(calculateCol(col))}
+        {newRow && letters && (
+          <Text style={[textStyle, lettersStyles]}>
+            {String.fromCharCode(97 + col).toUpperCase()}
           </Text>
         )}
       </View>
