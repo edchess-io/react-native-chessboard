@@ -32,7 +32,8 @@ type BoardOperationsContextType = {
   moveProgrammatically: (
     from: Square,
     to: Square,
-    promotionPiece?: PieceType
+    promotionPiece?: PieceType,
+    seqNumber?: number
   ) => void;
   isPieceGestureInProgress: boolean;
   setIsPieceGestureInProgress: (value: boolean) => void;
@@ -103,7 +104,12 @@ const BoardOperationsContextProviderComponent = React.forwardRef<
   );
 
   const moveProgrammatically = useCallback(
-    (from: Square, to: Square, promotionPiece?: PieceType) => {
+    (
+      from: Square,
+      to: Square,
+      promotionPiece?: PieceType,
+      seqNumber?: number
+    ) => {
       const move = chess.move({
         from,
         to,
@@ -123,6 +129,7 @@ const BoardOperationsContextProviderComponent = React.forwardRef<
           ...getChessboardState(chess),
           in_promotion: promotionPiece != null,
         },
+        seqNumber,
       });
 
       setBoard(chess.board());

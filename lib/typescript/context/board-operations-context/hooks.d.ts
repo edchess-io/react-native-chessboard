@@ -12,7 +12,7 @@ declare const useBoardOperations: () => {
     turn: {
         value: "b" | "w";
     };
-    moveProgrammatically: (from: import("chess.js").Square, to: import("chess.js").Square, promotionPiece?: import("chess.js").PieceType | undefined) => void;
+    moveProgrammatically: (from: import("chess.js").Square, to: import("chess.js").Square, promotionPiece?: import("chess.js").PieceType | undefined, seqNumber?: number | undefined) => void;
     isPieceGestureInProgress: boolean;
     setIsPieceGestureInProgress: (value: boolean) => void;
 };

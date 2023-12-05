@@ -90,9 +90,9 @@ const BoardRefsContextProviderComponent = React.forwardRef<
   useImperativeHandle(
     ref,
     () => ({
-      move: ({ from, to, promotionPiece }) => {
+      move: ({ from, to, promotionPiece, seqNumber }) => {
         if (promotionPiece) {
-          moveProgrammatically(from, to, promotionPiece);
+          moveProgrammatically(from, to, promotionPiece, seqNumber);
         }
 
         return pieceRefs?.current?.[from].current?.moveTo?.(to);

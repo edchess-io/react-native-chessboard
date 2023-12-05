@@ -10,7 +10,7 @@ declare type BoardOperationsContextType = {
     isPromoting: (from: Square, to: Square) => boolean;
     selectedSquare: Animated.SharedValue<Square | null>;
     turn: Animated.SharedValue<'w' | 'b'>;
-    moveProgrammatically: (from: Square, to: Square, promotionPiece?: PieceType) => void;
+    moveProgrammatically: (from: Square, to: Square, promotionPiece?: PieceType, seqNumber?: number) => void;
     isPieceGestureInProgress: boolean;
     setIsPieceGestureInProgress: (value: boolean) => void;
 };

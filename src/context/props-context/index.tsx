@@ -8,6 +8,7 @@ import type { ChessboardState } from '../../helpers/get-chessboard-state';
 type ChessMoveInfo = {
   move: Move;
   state: ChessboardState & { in_promotion: boolean };
+  seqNumber?: number;
 };
 
 type ChessboardColorsType = {

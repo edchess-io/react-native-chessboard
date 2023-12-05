@@ -7,6 +7,7 @@ declare type ChessMoveInfo = {
     state: ChessboardState & {
         in_promotion: boolean;
     };
+    seqNumber?: number;
 };
 declare type ChessboardColorsType = {
     white?: string;
