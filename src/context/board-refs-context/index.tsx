@@ -31,6 +31,7 @@ export type ChessboardRef = {
     from: Square;
     to: Square;
     promotionPiece?: PieceType;
+    seqNumber?: number;
   }) => Promise<Move | undefined> | undefined;
   highlight: (_: {
     square: Square;
